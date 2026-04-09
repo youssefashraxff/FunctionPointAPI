@@ -5,8 +5,6 @@ var builder = WebApplication.CreateBuilder(args);
 // This tells ASP.NET to scan for Controller classes and use them
 builder.Services.AddControllers();
 
-// OpenAPI/Swagger so you can test endpoints in the browser
-builder.Services.AddOpenApi();
 
 // CORS = Cross-Origin Resource Sharing
 // Without this, Angular (running on localhost:4200) can't call our API (localhost:5xxx).
@@ -23,12 +21,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// ── Configure the HTTP pipeline ────────────────────
-
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
 
 app.UseHttpsRedirection();
 
