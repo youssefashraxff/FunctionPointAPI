@@ -3,19 +3,14 @@ using FunctionPointAPI.Models;
 
 namespace FunctionPointAPI.Controllers;
 
-// This attribute tells ASP.NET: "This class handles HTTP requests"
+
 [ApiController]
-// This means all routes start with /api/functionpoint
-// e.g. POST /api/functionpoint/ufp, GET /api/functionpoint/languages
+//  all routes start with /api/functionpoint
+
 [Route("api/[controller]")]
 public class FunctionPointController : ControllerBase
 {
-    // ══════════════════════════════════════════════
-    // STATIC DATA (hardcoded as per project spec)
-    // ══════════════════════════════════════════════
-
-    // Complexity weight table from the PDF
-    // Structure: [simple, average, complex] for each type
+   
     private static readonly Dictionary<string, int[]> ComplexityWeights = new()
     {
         { "ExternalInputs",         new[] { 3, 4, 6 } },
@@ -25,7 +20,7 @@ public class FunctionPointController : ControllerBase
         { "ExternalInterfaceFiles", new[] { 5, 7, 10 } }
     };
 
-    // The 14 General System Characteristics (GSC) attribute names
+    
     private static readonly string[] GscAttributes =
     {
         "Data Communications",
@@ -44,7 +39,7 @@ public class FunctionPointController : ControllerBase
         "Facilitate Change"
     };
 
-    // AVC (Average lines of code per function point) table from the PDF
+    
     private static readonly Dictionary<string, int> AvcTable = new()
     {
         { "Assembly Language", 320 },
@@ -63,18 +58,15 @@ public class FunctionPointController : ControllerBase
     };
 
 
-    // ══════════════════════════════════════════════
+   
     // ENDPOINTS
-    // ══════════════════════════════════════════════
+  
 
-    /// <summary>
-    /// POST /api/functionpoint/ufp
-    /// Calculates Total UFP = Σ (count × weight) for all 5 function types
-    /// </summary>
+ 
     [HttpPost("ufp")]
     public ActionResult<UfpResponse> CalculateUfp([FromBody] UfpRequest request)
     {
-        // Map each property name to its actual count object
+       
         var functionTypes = new Dictionary<string, FunctionTypeCount>
         {
             { "ExternalInputs", request.ExternalInputs },
@@ -89,10 +81,10 @@ public class FunctionPointController : ControllerBase
 
         foreach (var (typeName, counts) in functionTypes)
         {
-            // Get the weight array [simple, average, complex] for this type
+           
             int[] weights = ComplexityWeights[typeName];
 
-            // UFP for this type = (simple count × simple weight) + (avg × avg) + (complex × complex)
+          
             int typeUfp = (counts.Simple * weights[0])
                         + (counts.Average * weights[1])
                         + (counts.Complex * weights[2]);
@@ -109,11 +101,6 @@ public class FunctionPointController : ControllerBase
     }
 
 
-    /// <summary>
-    /// POST /api/functionpoint/tcf
-    /// Calculates TCF = 0.65 + 0.01 * DI
-    /// DI can be provided directly OR calculated from 14 attribute ratings
-    /// </summary>
     [HttpPost("tcf")]
     public ActionResult<TcfResponse> CalculateTcf([FromBody] TcfRequest request)
     {
@@ -121,8 +108,7 @@ public class FunctionPointController : ControllerBase
 
         if (request.Attributes != null && request.Attributes.Count == 14)
         {
-            // Mode 2: Calculate DI from 14 attributes
-            // Validate each attribute is between 0 and 5
+           
             if (request.Attributes.Any(a => a < 0 || a > 5))
             {
                 return BadRequest("Each attribute must be between 0 and 5.");
@@ -132,7 +118,7 @@ public class FunctionPointController : ControllerBase
         }
         else if (request.Di.HasValue)
         {
-            // Mode 1: Direct DI input
+          
             di = request.Di.Value;
         }
         else
@@ -150,10 +136,7 @@ public class FunctionPointController : ControllerBase
     }
 
 
-    /// <summary>
-    /// POST /api/functionpoint/fp
-    /// Calculates FP = UFP * TCF
-    /// </summary>
+
     [HttpPost("fp")]
     public ActionResult<FpResponse> CalculateFp([FromBody] FpRequest request)
     {
@@ -166,10 +149,7 @@ public class FunctionPointController : ControllerBase
     }
 
 
-    /// <summary>
-    /// POST /api/functionpoint/loc
-    /// Calculates LOC = AVC * FP
-    /// </summary>
+ 
     [HttpPost("loc")]
     public ActionResult<LocResponse> CalculateLoc([FromBody] LocRequest request)
     {
@@ -190,10 +170,7 @@ public class FunctionPointController : ControllerBase
     }
 
 
-    /// <summary>
-    /// GET /api/functionpoint/languages
-    /// Returns the AVC table so Angular can populate a dropdown
-    /// </summary>
+   
     [HttpGet("languages")]
     public ActionResult<Dictionary<string, int>> GetLanguages()
     {
@@ -201,10 +178,7 @@ public class FunctionPointController : ControllerBase
     }
 
 
-    /// <summary>
-    /// GET /api/functionpoint/gsc-attributes
-    /// Returns the 14 GSC attribute names so Angular can build the form
-    /// </summary>
+
     [HttpGet("gsc-attributes")]
     public ActionResult<string[]> GetGscAttributes()
     {
