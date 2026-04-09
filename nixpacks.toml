@@ -1,0 +1,5 @@
+[phases.build]
+cmds = ["dotnet publish FunctionPointAPI.csproj -c Release -o out"]
+
+[start]
+cmd = "dotnet out/FunctionPointAPI.dll"
