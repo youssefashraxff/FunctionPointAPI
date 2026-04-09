@@ -1,5 +1,8 @@
+[phases.setup]
+nixPkgs = ["dotnet-sdk_10"]
+
 [phases.build]
-cmds = ["dotnet publish FunctionPointAPI.csproj -c Release -o out"]
+cmds = ["dotnet restore FunctionPointAPI.csproj", "dotnet publish FunctionPointAPI.csproj -c Release -o out"]
 
 [start]
 cmd = "dotnet out/FunctionPointAPI.dll"
