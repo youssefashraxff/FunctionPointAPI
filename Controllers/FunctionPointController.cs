@@ -1,0 +1,213 @@
+using Microsoft.AspNetCore.Mvc;
+using FunctionPointAPI.Models;
+
+namespace FunctionPointAPI.Controllers;
+
+// This attribute tells ASP.NET: "This class handles HTTP requests"
+[ApiController]
+// This means all routes start with /api/functionpoint
+// e.g. POST /api/functionpoint/ufp, GET /api/functionpoint/languages
+[Route("api/[controller]")]
+public class FunctionPointController : ControllerBase
+{
+    // ══════════════════════════════════════════════
+    // STATIC DATA (hardcoded as per project spec)
+    // ══════════════════════════════════════════════
+
+    // Complexity weight table from the PDF
+    // Structure: [simple, average, complex] for each type
+    private static readonly Dictionary<string, int[]> ComplexityWeights = new()
+    {
+        { "ExternalInputs",         new[] { 3, 4, 6 } },
+        { "ExternalOutputs",        new[] { 4, 5, 7 } },
+        { "ExternalInquiries",      new[] { 3, 4, 6 } },
+        { "InternalLogicalFiles",   new[] { 7, 10, 15 } },
+        { "ExternalInterfaceFiles", new[] { 5, 7, 10 } }
+    };
+
+    // The 14 General System Characteristics (GSC) attribute names
+    private static readonly string[] GscAttributes =
+    {
+        "Data Communications",
+        "Distributed Data Processing",
+        "Performance",
+        "Heavily Used Configuration",
+        "Transaction Rate",
+        "Online Data Entry",
+        "End-User Efficiency",
+        "Online Update",
+        "Complex Processing",
+        "Reusability",
+        "Installation Ease",
+        "Operational Ease",
+        "Multiple Sites",
+        "Facilitate Change"
+    };
+
+    // AVC (Average lines of code per function point) table from the PDF
+    private static readonly Dictionary<string, int> AvcTable = new()
+    {
+        { "Assembly Language", 320 },
+        { "C", 128 },
+        { "COBOL/Fortran", 105 },
+        { "Pascal", 90 },
+        { "Ada", 70 },
+        { "C++", 64 },
+        { "Visual Basic", 32 },
+        { "Object-Oriented Languages", 30 },
+        { "Smalltalk", 22 },
+        { "Code Generators (PowerBuilder)", 15 },
+        { "SQL/Oracle", 12 },
+        { "Spreadsheets", 6 },
+        { "Graphical Languages (Icons)", 4 }
+    };
+
+
+    // ══════════════════════════════════════════════
+    // ENDPOINTS
+    // ══════════════════════════════════════════════
+
+    /// <summary>
+    /// POST /api/functionpoint/ufp
+    /// Calculates Total UFP = Σ (count × weight) for all 5 function types
+    /// </summary>
+    [HttpPost("ufp")]
+    public ActionResult<UfpResponse> CalculateUfp([FromBody] UfpRequest request)
+    {
+        // Map each property name to its actual count object
+        var functionTypes = new Dictionary<string, FunctionTypeCount>
+        {
+            { "ExternalInputs", request.ExternalInputs },
+            { "ExternalOutputs", request.ExternalOutputs },
+            { "ExternalInquiries", request.ExternalInquiries },
+            { "InternalLogicalFiles", request.InternalLogicalFiles },
+            { "ExternalInterfaceFiles", request.ExternalInterfaceFiles }
+        };
+
+        int totalUfp = 0;
+        var breakdown = new Dictionary<string, int>();
+
+        foreach (var (typeName, counts) in functionTypes)
+        {
+            // Get the weight array [simple, average, complex] for this type
+            int[] weights = ComplexityWeights[typeName];
+
+            // UFP for this type = (simple count × simple weight) + (avg × avg) + (complex × complex)
+            int typeUfp = (counts.Simple * weights[0])
+                        + (counts.Average * weights[1])
+                        + (counts.Complex * weights[2]);
+
+            breakdown[typeName] = typeUfp;
+            totalUfp += typeUfp;
+        }
+
+        return Ok(new UfpResponse
+        {
+            TotalUfp = totalUfp,
+            Breakdown = breakdown
+        });
+    }
+
+
+    /// <summary>
+    /// POST /api/functionpoint/tcf
+    /// Calculates TCF = 0.65 + 0.01 * DI
+    /// DI can be provided directly OR calculated from 14 attribute ratings
+    /// </summary>
+    [HttpPost("tcf")]
+    public ActionResult<TcfResponse> CalculateTcf([FromBody] TcfRequest request)
+    {
+        int di;
+
+        if (request.Attributes != null && request.Attributes.Count == 14)
+        {
+            // Mode 2: Calculate DI from 14 attributes
+            // Validate each attribute is between 0 and 5
+            if (request.Attributes.Any(a => a < 0 || a > 5))
+            {
+                return BadRequest("Each attribute must be between 0 and 5.");
+            }
+
+            di = request.Attributes.Sum();
+        }
+        else if (request.Di.HasValue)
+        {
+            // Mode 1: Direct DI input
+            di = request.Di.Value;
+        }
+        else
+        {
+            return BadRequest("Provide either 'di' as an integer or 'attributes' as an array of 14 integers (0-5).");
+        }
+
+        double tcf = 0.65 + 0.01 * di;
+
+        return Ok(new TcfResponse
+        {
+            Di = di,
+            Tcf = Math.Round(tcf, 4)
+        });
+    }
+
+
+    /// <summary>
+    /// POST /api/functionpoint/fp
+    /// Calculates FP = UFP * TCF
+    /// </summary>
+    [HttpPost("fp")]
+    public ActionResult<FpResponse> CalculateFp([FromBody] FpRequest request)
+    {
+        double fp = request.Ufp * request.Tcf;
+
+        return Ok(new FpResponse
+        {
+            Fp = Math.Round(fp, 2)
+        });
+    }
+
+
+    /// <summary>
+    /// POST /api/functionpoint/loc
+    /// Calculates LOC = AVC * FP
+    /// </summary>
+    [HttpPost("loc")]
+    public ActionResult<LocResponse> CalculateLoc([FromBody] LocRequest request)
+    {
+        if (!AvcTable.ContainsKey(request.Language))
+        {
+            return BadRequest($"Unknown language: '{request.Language}'. Use GET /api/functionpoint/languages to see available options.");
+        }
+
+        int avc = AvcTable[request.Language];
+        double loc = avc * request.Fp;
+
+        return Ok(new LocResponse
+        {
+            Loc = Math.Round(loc, 2),
+            Language = request.Language,
+            Avc = avc
+        });
+    }
+
+
+    /// <summary>
+    /// GET /api/functionpoint/languages
+    /// Returns the AVC table so Angular can populate a dropdown
+    /// </summary>
+    [HttpGet("languages")]
+    public ActionResult<Dictionary<string, int>> GetLanguages()
+    {
+        return Ok(AvcTable);
+    }
+
+
+    /// <summary>
+    /// GET /api/functionpoint/gsc-attributes
+    /// Returns the 14 GSC attribute names so Angular can build the form
+    /// </summary>
+    [HttpGet("gsc-attributes")]
+    public ActionResult<string[]> GetGscAttributes()
+    {
+        return Ok(GscAttributes);
+    }
+}
