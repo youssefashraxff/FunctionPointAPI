@@ -15,9 +15,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins("http://localhost:4200") // Angular's default dev server
-              .AllowAnyHeader()                     // Allow JSON content-type etc.
-              .AllowAnyMethod();                    // Allow GET, POST, etc.
+        policy.AllowAnyOrigin()
+      .AllowAnyHeader()
+      .AllowAnyMethod();                  // Allow GET, POST, etc.
     });
 });
 
