@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FunctionPointAPI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7552bd2cfa325ec4a242012c45bf45c6fe45465e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2c1981daa2fdbd256157e94803f2861c5b2d6db3")]
 [assembly: System.Reflection.AssemblyProductAttribute("FunctionPointAPI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FunctionPointAPI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
