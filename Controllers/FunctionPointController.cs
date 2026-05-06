@@ -42,6 +42,7 @@ public class FunctionPointController : ControllerBase
     
     private static readonly Dictionary<string, int> AvcTable = new()
     {
+        {"No Language",1},
         { "Assembly Language", 320 },
         { "C", 128 },
         { "COBOL/Fortran", 105 },
