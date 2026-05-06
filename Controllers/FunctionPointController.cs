@@ -172,6 +172,46 @@ public class FunctionPointController : ControllerBase
 
 
    
+    [HttpPost("size")]
+    public ActionResult<ProjectSizeResponse> CalculateProjectSize([FromBody] ProjectSizeRequest request)
+    {
+        if (request.Fp <= 0)
+            return BadRequest("Fp must be greater than 0.");
+        if (request.Loc < 0)
+            return BadRequest("Loc must be non-negative.");
+
+        double locPerFp = Math.Round(request.Loc / request.Fp, 2);
+
+        string sizeCategory = request.Fp switch
+        {
+            < 50    => "Extra Small",
+            < 150   => "Small",
+            < 500   => "Medium",
+            < 1500  => "Large",
+            _       => "Extra Large"
+        };
+
+        // Lower LOC/FP = higher-level language = better productivity
+        string productivityRating = locPerFp switch
+        {
+            <= 10  => "Very High",
+            <= 30  => "High",
+            <= 64  => "Average",
+            <= 128 => "Low",
+            _      => "Very Low"
+        };
+
+        return Ok(new ProjectSizeResponse
+        {
+            Fp = Math.Round(request.Fp, 2),
+            Loc = Math.Round(request.Loc, 2),
+            LocPerFp = locPerFp,
+            SizeCategory = sizeCategory,
+            ProductivityRating = productivityRating
+        });
+    }
+
+
     [HttpGet("languages")]
     public ActionResult<Dictionary<string, int>> GetLanguages()
     {
