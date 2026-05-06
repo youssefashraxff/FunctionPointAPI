@@ -83,7 +83,5 @@ public class ProjectSizeResponse
 {
     public double Fp { get; set; }
     public double Loc { get; set; }
-    public double LocPerFp { get; set; }
-    public string SizeCategory { get; set; } = string.Empty;
-    public string ProductivityRating { get; set; } = string.Empty;
+    public double Size { get; set; }
 }
